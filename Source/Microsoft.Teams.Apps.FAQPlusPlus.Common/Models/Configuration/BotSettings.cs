@@ -5,8 +5,8 @@
 namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Models.Configuration
 {
     /// <summary>
-   /// Provides app settings related to FaqPlusPlus bot.
-   /// </summary>
+    /// Provides app settings related to FaqPlusPlus bot.
+    /// </summary>
     public class BotSettings
     {
         /// <summary>
@@ -20,9 +20,14 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Models.Configuration
         public string AppBaseUri { get; set; }
 
         /// <summary>
-        /// Gets or sets microsoft app id.
+        /// Gets or sets sme app id.
         /// </summary>
-        public string MicrosoftAppId { get; set; }
+        public string SmeAppId { get; set; }
+
+        /// <summary>
+        /// Gets or sets user app id.
+        /// </summary>
+        public string UserAppId { get; set; }
 
         /// <summary>
         /// Gets or sets access tenant id string.
