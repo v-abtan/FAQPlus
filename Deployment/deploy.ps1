@@ -407,8 +407,10 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
     function DeployARMTemplate {
         Param(
             [Parameter(Mandatory=$true)] $botAppId,
+            [Parameter(Mandatory=$true)] $smeBotAppId,
             [Parameter(Mandatory=$true)] $configAppId,
-            [Parameter(Mandatory=$true)] $appSecret
+            [Parameter(Mandatory=$true)] $userAppSecret,
+            [Parameter(Mandatory=$true)] $smeAppSecret
         )
         try { 
             if ((az group exists --name $parameters.ResourceGroupName.Value) -eq $false){
@@ -418,7 +420,7 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
             
             # Deploy ARM templates
             Write-Host "Deploying app services, storage accounts, bot service, and cognitive services..." -ForegroundColor Yellow
-            az deployment group create --resource-group $parameters.ResourceGroupName.Value --subscription $parameters.SubscriptionId.Value --template-file 'azuredeploy.json' --parameters "baseResourceName=$($parameters.BaseResourceName.Value)" "botClientId=$botAppId" "botClientSecret=$appSecret" "configAppClientId=$configAppId" "configAdminUPNList=$($parameters.ConfigAdminUPNList.Value)" "appDisplayName=$($parameters.AppDisplayName.Value)" "appDescription=$($parameters.AppDescription.Value)" "appIconUrl=$($parameters.AppIconUrl.Value)" "sku=$($parameters.Sku.Value)" "planSize=$($parameters.PlanSize.Value)" "qnaMakerSku=$($parameters.QnaMakerSku.Value)" "searchServiceSku=$($parameters.SearchServiceSku.Value)" "gitRepoUrl=$($parameters.GitRepoUrl.Value)" "gitBranch=$($parameters.GitBranch.Value)"
+            az deployment group create --resource-group $parameters.ResourceGroupName.Value --subscription $parameters.SubscriptionId.Value --template-file 'azuredeploy.json' --parameters "baseResourceName=$($parameters.BaseResourceName.Value)" "botClientId=$botAppId" "smeBotClientId=$smeBotAppId" "botClientSecret=$userAppSecret" "smeBotClientSecret=$smeAppSecret" "configAppClientId=$configAppId" "configAdminUPNList=$($parameters.ConfigAdminUPNList.Value)" "appDisplayName=$($parameters.AppDisplayName.Value)" "appDescription=$($parameters.AppDescription.Value)" "appIconUrl=$($parameters.AppIconUrl.Value)" "sku=$($parameters.Sku.Value)" "planSize=$($parameters.PlanSize.Value)" "qnaMakerSku=$($parameters.QnaMakerSku.Value)" "searchServiceSku=$($parameters.SearchServiceSku.Value)" "gitRepoUrl=$($parameters.GitRepoUrl.Value)" "gitBranch=$($parameters.GitBranch.Value)"
             if($LASTEXITCODE -ne 0){
                 CollectARMDeploymentLogs
                 Throw "ERROR: ARM template deployment error."
@@ -434,7 +436,8 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
     function GenerateAppManifestPackage {
         Param(
             [Parameter(Mandatory=$true)] [ValidateSet(
-                'sme', 'enduser')] $manifestType
+                'sme', 'enduser')] $manifestType,
+            [Parameter(Mandatory=$true)] $botAppId
         )
 
         Write-Host "Generating package for $manifestType..."
@@ -540,7 +543,7 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
         Exit
     }
 
-    # Create bot app (Name, App Secret, Multi-Organization support, Enable ID Tokens)
+    # Create end-user bot app (Name, App Secret, Multi-Organization support, Enable ID Tokens)
     $botAppId = $null
     $botClientSecret = $null
     $botApp = @{
@@ -561,6 +564,27 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
         $botClientSecret = $botApp.appSecret
     }
     
+    # Create SME bot app (Name, App Secret, Multi-Organization support, Enable ID Tokens)
+    $smeBotAppId = $null
+    $botApp = @{
+        AppName = $parameters.BaseAppName.Value + '-sme'
+        ResetAppSecret = $true
+        MultiTenant = $true
+        AllowImplicitFlow = $false
+        RedirectUris = $null
+    }
+    $botApp = CreateAzureADApp @botApp
+    $botApp = If ($botApp -is [array]) {$botApp[-1]} Else {$botApp}
+    # User cancelled operation or error occurred.
+    If($null -eq $botApp){
+        Exit
+    }
+    else{
+        $smeBotAppId = $botApp.appId;
+        $smeBotClientSecret = $botApp.appSecret
+    }
+    
+
     # Create config app (Name, Single-Organization support, Enable ID Tokens, and Add Reply-Urls)
     $configAppId = $null
     $azureDomainBase = 'azurewebsites.net'
@@ -582,11 +606,11 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
     }
     
     # Deploy the other resources in ARM template
-    DeployARMTemplate $botAppId $configAppId $botClientSecret -ErrorAction Stop
+    DeployARMTemplate $botAppId $smeBotAppId $configAppId $botClientSecret $smeBotClientSecret -ErrorAction Stop
     
     # Generate Apps manifests
-    GenerateAppManifestPackage 'sme'
-    GenerateAppManifestPackage 'enduser'
+    GenerateAppManifestPackage 'sme' $smeBotAppId
+    GenerateAppManifestPackage 'enduser' $botAppId
 
     # Log out to avoid tokens caching
     az logout
