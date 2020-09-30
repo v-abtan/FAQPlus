@@ -1,4 +1,4 @@
-// <copyright file="FaqPlusPlusBot.cs" company="Microsoft">
+// <copyright file="SmeActivityHandler.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
@@ -55,16 +55,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         /// Represents the task module width.
         /// </summary>
         private const int TaskModuleWidth = 500;
-
-        /// <summary>
-        /// Represents the conversation type as personal.
-        /// </summary>
-        private const string ConversationTypePersonal = "personal";
-
-        /// <summary>
-        ///  Represents the conversation type as channel.
-        /// </summary>
-        private const string ConversationTypeChannel = "channel";
 
         /// <summary>
         /// ChangeStatus - text that triggers change status action by SME.
@@ -160,7 +150,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (message.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypeChannel:
+                    case ConversationTypes.ConversationTypeChannel:
                         await this.OnMessageActivityInChannelAsync(
                             message,
                             turnContext,
@@ -207,7 +197,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (activity.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypeChannel:
+                    case ConversationTypes.ConversationTypeChannel:
                         await this.OnMembersAddedToTeamAsync(activity.MembersAdded, turnContext, cancellationToken).ConfigureAwait(false);
                         return;
 

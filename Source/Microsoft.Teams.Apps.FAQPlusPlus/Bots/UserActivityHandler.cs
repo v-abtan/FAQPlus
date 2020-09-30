@@ -36,16 +36,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
     public class UserActivityHandler : CommonTeamsActivityHandler
     {
         /// <summary>
-        ///  Default access cache expiry in days to check if user using the app is a valid SME or not.
-        /// </summary>
-        private const int DefaultAccessCacheExpiryInDays = 5;
-
-        /// <summary>
-        /// Represents the conversation type as personal.
-        /// </summary>
-        private const string ConversationTypePersonal = "personal";
-
-        /// <summary>
         /// Represents a set of key/value application configuration properties for FaqPlusPlus bot.
         /// </summary>
         private readonly BotSettings options;
@@ -53,7 +43,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         private readonly IConfigurationDataProvider configurationProvider;
         private readonly MicrosoftAppCredentials microsoftAppCredentials;
         private readonly ITicketsProvider ticketsProvider;
-        private readonly int accessCacheExpiryInDays;
         private readonly string appBaseUri;
         private readonly IQnaServiceProvider qnaServiceProvider;
 
@@ -80,14 +69,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             this.ticketsProvider = ticketsProvider;
             this.options = optionsAccessor.CurrentValue;
             this.qnaServiceProvider = qnaServiceProvider;
-            this.accessCacheExpiryInDays = this.options.AccessCacheExpiryInDays;
-
-            if (this.accessCacheExpiryInDays <= 0)
-            {
-                this.accessCacheExpiryInDays = DefaultAccessCacheExpiryInDays;
-                this.logger.LogInformation($"Configuration option is not present or out of range for AccessCacheExpiryInDays and the default value is set to: {this.accessCacheExpiryInDays}", SeverityLevel.Information);
-            }
-
             this.appBaseUri = this.options.AppBaseUri;
         }
 
@@ -150,7 +131,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (message.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypePersonal:
+                    case ConversationTypes.ConversationTypePersonal:
                         await this.OnMessageActivityInPersonalChatAsync(
                             message,
                             turnContext,
@@ -197,7 +178,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (activity.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypePersonal:
+                    case ConversationTypes.ConversationTypePersonal:
                         await this.OnMembersAddedToPersonalChatAsync(activity.MembersAdded, turnContext).ConfigureAwait(false);
                         return;
 
