@@ -373,7 +373,7 @@
         "description": "[parameters('appDescription')]",
         "iconUrl": "[parameters('appIconUrl')]",
         "msaAppId": "[parameters('botClientId')]",
-        "endpoint": "[concat(variables('botAppUrl'), '/api/messages')]",
+        "endpoint": "[concat(variables('botAppUrl'), '/api/messages/user')]",
         "developerAppInsightKey": "[reference(resourceId('Microsoft.Insights/components', variables('botAppInsightsName')), '2015-05-01').InstrumentationKey]"
       },
       "resources": [
@@ -520,7 +520,7 @@
         "description": "[parameters('appDescription')]",
         "iconUrl": "[parameters('appIconUrl')]",
         "msaAppId": "[parameters('smeBotClientId')]",
-        "endpoint": "[concat(variables('botAppUrl'), '/api/messages')]",
+        "endpoint": "[concat(variables('botAppUrl'), '/api/messages/sme')]",
         "developerAppInsightKey": "[reference(resourceId('Microsoft.Insights/components', variables('botAppInsightsName')), '2015-05-01').InstrumentationKey]"
       },
       "resources": [
