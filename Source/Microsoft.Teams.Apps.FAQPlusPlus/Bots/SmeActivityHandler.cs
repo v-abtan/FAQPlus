@@ -72,7 +72,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         private readonly IActivityStorageProvider activityStorageProvider;
         private readonly ISearchService searchService;
         private readonly string appId;
-        private readonly BotFrameworkAdapter botAdapter;
+        private readonly BotAdapter botAdapter;
         private readonly IMemoryCache accessCache;
         private readonly int accessCacheExpiryInDays;
         private readonly string appBaseUri;
@@ -100,7 +100,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             IQnaServiceProvider qnaServiceProvider,
             IActivityStorageProvider activityStorageProvider,
             ISearchService searchService,
-            BotFrameworkAdapter botAdapter,
+            BotAdapter botAdapter,
             IMemoryCache memoryCache,
             IKnowledgeBaseSearchService knowledgeBaseSearchService,
             IOptionsMonitor<BotSettings> optionsAccessor,
@@ -1013,7 +1013,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                         conversationReference,
                         async (newTurnContext, newCancellationToken) =>
                         {
-                            var members = await this.botAdapter.GetConversationMembersAsync(newTurnContext, default(CancellationToken)).ConfigureAwait(false);
+                            var members = await ((BotFrameworkAdapter)this.botAdapter).GetConversationMembersAsync(newTurnContext, default(CancellationToken)).ConfigureAwait(false);
                             foreach (var member in members)
                             {
                                 if (member.Id == currentUserId)

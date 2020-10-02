@@ -7,9 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Teams.Apps.FAQPlu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Teams.Apps.FAQPlusPlus", "Microsoft.Teams.Apps.FAQPlusPlus\Microsoft.Teams.Apps.FAQPlusPlus.csproj", "{055149A6-01FF-4C2A-8CD5-DD0061A28CD8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Teams.Apps.FAQPlusPlus.Common", "Microsoft.Teams.Apps.FAQPlusPlus.Common\Microsoft.Teams.Apps.FAQPlusPlus.Common.csproj", "{868E7490-FD9A-44A6-8BC0-939C130BBC5B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Teams.Apps.FAQPlusPlus.Common", "Microsoft.Teams.Apps.FAQPlusPlus.Common\Microsoft.Teams.Apps.FAQPlusPlus.Common.csproj", "{868E7490-FD9A-44A6-8BC0-939C130BBC5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Teams.Apps.FAQPlusPlus.AzureFunction", "Microsoft.Teams.Apps.FAQPlusPlus.AzureFunction\Microsoft.Teams.Apps.FAQPlusPlus.AzureFunction.csproj", "{E678D0B0-C907-4A11-8AD9-94BD8C63F002}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Teams.Apps.FAQPlusPlus.AzureFunction", "Microsoft.Teams.Apps.FAQPlusPlus.AzureFunction\Microsoft.Teams.Apps.FAQPlusPlus.AzureFunction.csproj", "{E678D0B0-C907-4A11-8AD9-94BD8C63F002}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Teams.Apps.FAQPlusPlus.Tests", "Microsoft.Teams.Apps.FAQPlusPlus.Tests\Microsoft.Teams.Apps.FAQPlusPlus.Tests.csproj", "{9D73515B-6031-41F4-A66E-6C441961AF2F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{E678D0B0-C907-4A11-8AD9-94BD8C63F002}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E678D0B0-C907-4A11-8AD9-94BD8C63F002}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E678D0B0-C907-4A11-8AD9-94BD8C63F002}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D73515B-6031-41F4-A66E-6C441961AF2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D73515B-6031-41F4-A66E-6C441961AF2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D73515B-6031-41F4-A66E-6C441961AF2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D73515B-6031-41F4-A66E-6C441961AF2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
