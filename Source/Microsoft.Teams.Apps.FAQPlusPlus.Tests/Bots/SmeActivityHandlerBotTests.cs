@@ -25,14 +25,13 @@ using Xunit;
 namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
 {
     /// <summary>
-    /// Add unit test coverage for user bot
+    /// Add unit test coverage for SME bot
     /// </summary>
     public class SmeActivityHandlerBotTests
     {
         private readonly SmeActivityHandler sut;
         private readonly TestAdapter smeBotAdapter;
         private readonly ChannelAccount expertAccount;
-        private const string BotGenericAnswer = "This is generic bot answer.";
 
         public SmeActivityHandlerBotTests()
         {
@@ -73,8 +72,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
                     Conversation = new ConversationAccount
                     {
                         ConversationType = ConversationTypes.ConversationTypeChannel
-                    },
-                    //Bot = new TeamsChannelAccount(id: "SMEBotId",)
+                    }
                 }
             };
             return testAdapter;
@@ -100,7 +98,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
         {
             // Arrange
             // Create conversation activity
-            var conversationActivity = GetActivityWithText(Constants.TeamTour);
+            var  conversationActivity = GetActivityWithText(Constants.TeamTour);
 
             // Act
             // Send the message activity to the bot.
@@ -161,7 +159,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             Assert.IsType<HeroCard>(shareFeedbackAttachment.Content);
             var shareFeedbackCard = shareFeedbackAttachment.Content as HeroCard;
 
-            // 5 AdaptiveElements in body
             Assert.NotNull(shareFeedbackCard);
             Assert.Equal(Strings.TeamCustomMessage, shareFeedbackCard.Text);
 
@@ -206,8 +203,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             var card = attachment.Content as AdaptiveCard;
 
             // Card should have this content: 
-            // Here is what I found
-            // Bot Answer
+            // Description:
+            // Status: Assigned to *****
             Assert.Equal(2, card.Body.Count);
             Assert.IsType<AdaptiveFactSet>(card.Body[1]);
             Assert.NotNull(card.Body[1]);
