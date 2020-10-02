@@ -129,6 +129,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
             services.AddSingleton<ISearchService, SearchService>();
             services.AddSingleton<IMemoryCache, MemoryCache>();
             services.AddTransient(sp => (BotFrameworkAdapter)sp.GetRequiredService<IBotFrameworkHttpAdapter>());
+            services.AddTransient<BotAdapter, BotFrameworkAdapter>();
             services.AddSingleton<SmeActivityHandler>();
             services.AddSingleton<UserActivityHandler>();
 
