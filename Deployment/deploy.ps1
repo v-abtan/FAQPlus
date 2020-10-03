@@ -567,7 +567,7 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
     # Create SME bot app (Name, App Secret, Multi-Organization support, Enable ID Tokens)
     $smeBotAppId = $null
     $botApp = @{
-        AppName = $parameters.BaseAppName.Value + '-sme'
+        AppName = $parameters.BaseAppName.Value + ' SME'
         ResetAppSecret = $true
         MultiTenant = $true
         AllowImplicitFlow = $false
