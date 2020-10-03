@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
     /// </summary>
     public class UserActivityHandlerBotTests
     {
+        private readonly TestAdapter userBotAdapter;
         private readonly UserActivityHandler sut;
         private const string BotGenericAnswer = "This is generic bot answer.";
 
@@ -47,7 +49,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
                             Context = new QnASearchResultContext(prompts: new List<PromptDTO>())
                         }
                     })));
-            
+
+            this.userBotAdapter = GetUserBotTestAdapter();
             this.sut = new UserActivityHandler(mockConfigProvider.Object, new MicrosoftAppCredentials("", ""),
                 new Mock<ITicketsProvider>().Object, mockQnaService.Object,
                 mockBotSettingsMonitor, mockLogger.Object);
@@ -82,26 +85,49 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
         }
 
         [Fact]
+        public async Task ReturnsErrorMessageOnError()
+        {
+            // Arrange
+            // Create conversation activity
+            var conversationActivity = GetActivityWithText(Constants.TakeATour);
+            
+            // Setting conversation type to null will raise an error in bot handler
+            this.userBotAdapter.Conversation.Conversation.ConversationType = null;
+
+            // Act
+            // Send the message activity to the bot.
+            await Assert.ThrowsAsync<NullReferenceException>(async () => await this.userBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None));
+
+            // Assert we got the typing message
+            var reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
+            Assert.Equal(ActivityTypes.Typing, reply.Type);
+
+            // Assert that we received error message.
+            reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
+            Assert.Equal(ActivityTypes.Message, reply.Type);
+            Assert.Equal(Strings.ErrorMessage, reply.Text);
+        }
+
+        [Fact]
         public async Task ReturnsHelpCardsOnTakeATour()
         {
             // Arrange
             // Create conversation activity
             var conversationActivity = GetActivityWithText(Constants.TakeATour);
-            var testAdapter = GetUserBotTestAdapter();
-
+            
             // Act
             // Send the message activity to the bot.
-            await testAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+            await this.userBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
 
             // Assert we got the typing message
-            var reply = (IMessageActivity)testAdapter.GetNextReply();
+            var reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Typing, reply.Type);
 
             // Assert that we received 3 hero cards.
-            reply = (IMessageActivity)testAdapter.GetNextReply();
+            reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Message, reply.Type);
             Assert.Equal(3, reply.Attachments.Count);
-            Assert.Equal("application/vnd.microsoft.card.hero", reply.Attachments.First().ContentType);
+            Assert.Equal(HeroCard.ContentType, reply.Attachments.First().ContentType);
         }
 
         [Fact]
@@ -110,18 +136,17 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             // Arrange
             // Create conversation activity
             var conversationActivity = GetActivityWithText(Constants.AskAnExpert);
-            var testAdapter = GetUserBotTestAdapter();
-
+            
             // Act
             // Send the message activity to the bot.
-            await testAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+            await this.userBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
 
             // Assert we got the typing message
-            var reply = (IMessageActivity)testAdapter.GetNextReply();
+            var reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Typing, reply.Type);
 
             // Assert that we received AskExpert card.
-            reply = (IMessageActivity)testAdapter.GetNextReply();
+            reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Message, reply.Type);
             Assert.Equal(1, reply.Attachments.Count);
             var askExpertAttachment = reply.Attachments.First();
@@ -129,7 +154,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             Assert.IsType<AdaptiveCard>(askExpertAttachment.Content);
             var askExpertCard = askExpertAttachment.Content as AdaptiveCard;
             
-            // Submit action
+            // Submit action exist
             Assert.NotNull(askExpertCard);
             Assert.Single(askExpertCard.Actions);
             var submitAction = askExpertCard.Actions.First();
@@ -143,21 +168,21 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             // Arrange
             // Create conversation activity
             var conversationActivity = GetActivityWithText(Constants.ShareFeedback);
-            var testAdapter = GetUserBotTestAdapter();
-
+            
             // Act
             // Send the message activity to the bot.
-            await testAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+            await this.userBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
 
             // Assert we got the typing message
-            var reply = (IMessageActivity)testAdapter.GetNextReply();
+            var reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Typing, reply.Type);
 
-            // Assert that we received AskExpert card.
-            reply = (IMessageActivity)testAdapter.GetNextReply();
+            // Assert that we received message with 1 attachment.
+            reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Message, reply.Type);
             Assert.Equal(1, reply.Attachments.Count);
             
+            // Attachment card received
             var shareFeedbackAttachment = reply.Attachments.First();
             Assert.Equal(AdaptiveCard.ContentType, shareFeedbackAttachment.ContentType);
             Assert.IsType<AdaptiveCard>(shareFeedbackAttachment.Content);
@@ -167,7 +192,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             Assert.NotNull(shareFeedbackCard);
             Assert.Equal(5, shareFeedbackCard.Body.Count);
 
-            // Submit action
+            // Submit action exist
             Assert.Single(shareFeedbackCard.Actions);
             var submitAction = shareFeedbackCard.Actions.First();
             Assert.IsType<AdaptiveSubmitAction>(submitAction);
@@ -180,20 +205,19 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             // Arrange
             // Create conversation activity
             var conversationActivity = GetActivityWithText("Basic Question?");
-            var testAdapter = GetUserBotTestAdapter();
-
+            
             // Act
             // Send the message activity to the bot.
-            await testAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+            await this.userBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
 
             // Assert we got the typing message
-            var reply = (IMessageActivity)testAdapter.GetNextReply();
+            var reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Typing, reply.Type);
 
             // Assert that we received an answer from bot QNA service.
-            reply = (IMessageActivity)testAdapter.GetNextReply();
+            reply = (IMessageActivity)this.userBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Message, reply.Type);
-            Assert.Equal(1, reply.Attachments.Count);
+            Assert.Single(reply.Attachments);
 
             var attachment = reply.Attachments.First();
             Assert.Equal(AdaptiveCard.ContentType, attachment.ContentType);
@@ -203,7 +227,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             // Here is what I found
             // Bot Answer
             Assert.Equal(2, card.Body.Count);
-            Assert.IsType<AdaptiveTextBlock>(card.Body[1]);
+            Assert.IsType<AdaptiveTextBlock>(card.Body[card.Body.Count - 1]);
             Assert.Equal(BotGenericAnswer, (card.Body[card.Body.Count - 1] as AdaptiveTextBlock).Text);
         }
     }

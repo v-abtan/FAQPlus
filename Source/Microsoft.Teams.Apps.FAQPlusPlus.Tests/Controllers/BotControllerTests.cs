@@ -22,22 +22,12 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Controllers
     public class BotControllerTests
     {
         [Fact]
-        public async Task PostAsyncCallsProcessAsyncOnAdapter()
+        public async Task PostUserAsyncCallsProcessAsyncOnUserAdapter()
         {
             // Create MVC infrastructure mocks and objects
             var request = new Mock<HttpRequest>();
             var response = new Mock<HttpResponse>();
-            var mockHttpContext = new Mock<HttpContext>();
-            mockHttpContext.Setup(x => x.Request).Returns(request.Object);
-            mockHttpContext.Setup(x => x.Response).Returns(response.Object);
-            var actionContext = new ActionContext(mockHttpContext.Object, new RouteData(), new ControllerActionDescriptor());
-
-            // Create BF mocks
-            var mockAdapter = new Mock<IBotFrameworkHttpAdapter>();
-            mockAdapter
-                .Setup(x => x.ProcessAsync(It.IsAny<HttpRequest>(), It.IsAny<HttpResponse>(), It.IsAny<IBot>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            var (mockUserBot, mockSmeBot) = GetBotMockInstances();
+            var (actionContext, mockAdapter, mockUserBot, mockSmeBot) = GetBotsDependencies(request.Object, response.Object);
 
             // Create and initialize controller
             var sut = new BotController(mockAdapter.Object, mockUserBot, mockSmeBot)
@@ -56,6 +46,52 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Controllers
                     It.Is<IBot>(o => o == mockUserBot),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task PostSmeAsyncCallsProcessAsyncOnSmeAdapter()
+        {
+            // Create MVC infrastructure mocks and objects
+            var request = new Mock<HttpRequest>();
+            var response = new Mock<HttpResponse>();
+            var (actionContext, mockAdapter, mockUserBot, mockSmeBot) = GetBotsDependencies(request.Object, response.Object);
+
+            // Create and initialize controller
+            var sut = new BotController(mockAdapter.Object, mockUserBot, mockSmeBot)
+            {
+                ControllerContext = new ControllerContext(actionContext),
+            };
+
+            // Invoke the controller
+            await sut.PostSmeAsync();
+
+            // Assert
+            mockAdapter.Verify(
+                x => x.ProcessAsync(
+                    It.Is<HttpRequest>(o => o == request.Object),
+                    It.Is<HttpResponse>(o => o == response.Object),
+                    It.Is<IBot>(o => o == mockSmeBot),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        private (ActionContext actionContext, Mock<IBotFrameworkHttpAdapter> mockAdapter, UserActivityHandler mockUserBot,
+            SmeActivityHandler mockSmeBot) GetBotsDependencies(HttpRequest request, HttpResponse response)
+        {
+            var mockHttpContext = new Mock<HttpContext>();
+            mockHttpContext.Setup(x => x.Request).Returns(request);
+            mockHttpContext.Setup(x => x.Response).Returns(response);
+            var actionContext =
+                new ActionContext(mockHttpContext.Object, new RouteData(), new ControllerActionDescriptor());
+
+            // Create BF mocks
+            var mockAdapter = new Mock<IBotFrameworkHttpAdapter>();
+            mockAdapter
+                .Setup(x => x.ProcessAsync(It.IsAny<HttpRequest>(), It.IsAny<HttpResponse>(), It.IsAny<IBot>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            var (mockUserBot, mockSmeBot) = GetBotMockInstances();
+            return (actionContext, mockAdapter, mockUserBot, mockSmeBot);
         }
 
         private static (UserActivityHandler mockUserBot, SmeActivityHandler mockSmeBot) GetBotMockInstances()

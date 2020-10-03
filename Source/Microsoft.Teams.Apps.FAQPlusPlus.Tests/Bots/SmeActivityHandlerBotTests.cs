@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
-using Microsoft.Bot.Builder;
+using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
 using Microsoft.Bot.Builder.Adapters;
 using Microsoft.Bot.Connector;
 using Microsoft.Bot.Connector.Authentication;
@@ -32,6 +34,9 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
         private readonly SmeActivityHandler sut;
         private readonly TestAdapter smeBotAdapter;
         private readonly ChannelAccount expertAccount;
+        private readonly Mock<IQnaServiceProvider> qnaServiceProvider;
+        private const string ChangeStatus = "change status";
+        private const string TicketId = "TICKETID";
 
         public SmeActivityHandlerBotTests()
         {
@@ -39,25 +44,25 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             var botSettings = new BotSettings();
             var mockBotSettingsMonitor = Mock.Of<IOptionsMonitor<BotSettings>>(_ => _.CurrentValue == botSettings);
             var mockLogger = new Mock<ILogger<SmeActivityHandler>>();
-            
-            var ticketsProvider = new Mock<ITicketsProvider>();
-            ticketsProvider.Setup(x => x.GetTicketAsync(It.IsAny<string>()))
-                .Returns((string ticketId) => Task.FromResult(new TicketEntity
-                {
-                    TicketId = ticketId, Title = "Ticket Title", RequesterGivenName = "Expert #1",
-                    RequesterUserPrincipalName = "Expert#1",
-                    DateCreated = DateTime.Now.AddMinutes(-2),
-                    RequesterBotId = "theSMEBot"
-                }));
-            ticketsProvider.Setup(x => x.UpsertTicketAsync(It.IsAny<TicketEntity>()))
-                .Verifiable();
 
             string expertId = Guid.NewGuid().ToString(), expertName = "ExpertUser1";
             this.expertAccount = new ChannelAccount(id: expertId, aadObjectId: expertId, name: expertName);
 
+            var ticketsProvider = new Mock<ITicketsProvider>();
+            ticketsProvider.Setup(x => x.GetTicketAsync(It.IsAny<string>()))
+                .Returns((string ticketId) => Task.FromResult(new TicketEntity
+                {
+                    TicketId = ticketId, Title = "Ticket Title", RequesterGivenName = this.expertAccount.Name,
+                    RequesterUserPrincipalName = this.expertAccount.Name,
+                    DateCreated = DateTime.Now.AddMinutes(-2),
+                    RequesterBotId = "theSMEBot",
+                    LastModifiedByName = this.expertAccount.Name
+                }));
+
+            this.qnaServiceProvider = new Mock<IQnaServiceProvider>();
             this.smeBotAdapter = GetSmeBotTestAdapter();
             this.sut = new SmeActivityHandler(mockConfigProvider.Object, new MicrosoftAppCredentials("", ""),
-                ticketsProvider.Object, new Mock<IQnaServiceProvider>().Object,
+                ticketsProvider.Object, qnaServiceProvider.Object,
                 new Mock<IActivityStorageProvider>().Object, new Mock<ISearchService>().Object, this.smeBotAdapter, 
                 new MemoryCache(new MemoryCacheOptions()), new Mock<IKnowledgeBaseSearchService>().Object,
                 mockBotSettingsMonitor, mockLogger.Object);
@@ -112,7 +117,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
             Assert.Equal(ActivityTypes.Message, reply.Type);
             Assert.Equal(3, reply.Attachments.Count);
-            Assert.Equal("application/vnd.microsoft.card.hero", reply.Attachments.First().ContentType);
+            Assert.Equal(HeroCard.ContentType, reply.Attachments.First().ContentType);
         }
 
         [Fact]
@@ -162,7 +167,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
             Assert.NotNull(shareFeedbackCard);
             Assert.Equal(Strings.TeamCustomMessage, shareFeedbackCard.Text);
 
-            // Submit action
+            // Submit action exist
             Assert.Single(shareFeedbackCard.Buttons);
             var messageBackAction = shareFeedbackCard.Buttons.First();
             Assert.IsType<CardAction>(messageBackAction);
@@ -174,10 +179,10 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
         {
             // Arrange
             // Create conversation activity
-            var conversationActivity = GetActivityWithText("change status", new ChangeTicketStatusPayload
+            var conversationActivity = GetActivityWithText(ChangeStatus, new ChangeTicketStatusPayload
             {
                 Action = ChangeTicketStatusPayload.AssignToSelfAction,
-                TicketId = "TICKETID"
+                TicketId = TicketId
             });
 
             // Act
@@ -190,9 +195,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
 
             // Assert that we received an confirmation to end-user.
             reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
-            Assert.Equal($"This request is now assigned. Assigned to {this.expertAccount.Name}.", reply.Text);
+            Assert.Equal(string.Format(CultureInfo.InvariantCulture, Strings.SMEAssignedStatus, this.expertAccount.Name), reply.Text);
 
-            //await this.smeBotAdapter.ContinueConversationAsync()
             // Assert that we received the card in teams expert channel.
             reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
             Assert.Equal(Strings.AssignedTicketUserNotification, reply.Summary);
@@ -216,6 +220,180 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Tests.Bots
 
             // Actions should be present only if ticket is closed
             Assert.Null(card.Actions);
+        }
+        
+        [Fact]
+        public async Task ReturnsClosedStatusCardOnChangeStatus()
+        {
+            // Arrange
+            // Create conversation activity
+            var conversationActivity = GetActivityWithText(ChangeStatus, new ChangeTicketStatusPayload
+            {
+                Action = ChangeTicketStatusPayload.CloseAction,
+                TicketId = TicketId
+            });
+
+            // Act
+            // Send the message activity to the bot.
+            await this.smeBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+
+            // Assert we got the typing message
+            var reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(ActivityTypes.Typing, reply.Type);
+
+            // Assert that we received an confirmation to end-user.
+            reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(string.Format(CultureInfo.InvariantCulture, Strings.SMEClosedStatus, this.expertAccount.Name), reply.Text);
+            
+            // Assert that we received the card in teams expert channel.
+            reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(Strings.ClosedTicketUserNotification, reply.Summary);
+            Assert.Equal(1, reply.Attachments.Count);
+
+            var attachment = reply.Attachments.First();
+            Assert.Equal(AdaptiveCard.ContentType, attachment.ContentType);
+            var card = attachment.Content as AdaptiveCard;
+
+            // Card should have this content: 
+            // Description:
+            // Status: Assigned to *****
+            Assert.Equal(2, card.Body.Count);
+            Assert.IsType<AdaptiveFactSet>(card.Body[1]);
+            Assert.NotNull(card.Body[1]);
+            var factSet = card.Body[1] as AdaptiveFactSet;
+            Assert.Equal(4, factSet.Facts.Count);
+            var statusFact = factSet.Facts[0];
+            Assert.Equal(Strings.StatusFactTitle, statusFact.Title);
+            Assert.Equal(Strings.ClosedUserNotificationStatus, statusFact.Value);
+
+            // Last card should be closed card
+            Assert.Equal(Strings.ClosedFactTitle, factSet.Facts[factSet.Facts.Count - 1].Title);
+            
+            // Actions should be present only if ticket is closed
+            Assert.NotNull(card.Actions);
+        }
+
+        [Fact]
+        public async Task ReturnsReOpenStatusCardOnChangeStatus()
+        {
+            // Arrange
+            // Create conversation activity
+            var conversationActivity = GetActivityWithText(ChangeStatus, new ChangeTicketStatusPayload
+            {
+                Action = ChangeTicketStatusPayload.ReopenAction,
+                TicketId = TicketId
+            });
+
+            // Act
+            // Send the message activity to the bot.
+            await this.smeBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+
+            // Assert we got the typing message
+            var reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(ActivityTypes.Typing, reply.Type);
+
+            // Assert that we received an confirmation to end-user.
+            reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(string.Format(CultureInfo.InvariantCulture, Strings.SMEOpenedStatus, this.expertAccount.Name), reply.Text);
+
+            // Assert that we received the card in teams expert channel.
+            reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(Strings.ReopenedTicketUserNotification, reply.Summary);
+            Assert.Equal(1, reply.Attachments.Count);
+
+            var attachment = reply.Attachments.First();
+            Assert.Equal(AdaptiveCard.ContentType, attachment.ContentType);
+            var card = attachment.Content as AdaptiveCard;
+
+            // Card should have this content: 
+            // Description:
+            // Status: Assigned to *****
+            Assert.Equal(2, card.Body.Count);
+            Assert.IsType<AdaptiveFactSet>(card.Body[1]);
+            Assert.NotNull(card.Body[1]);
+            var factSet = card.Body[1] as AdaptiveFactSet;
+            Assert.Equal(3, factSet.Facts.Count);
+            var statusFact = factSet.Facts[0];
+            Assert.Equal(Strings.StatusFactTitle, statusFact.Title);
+            Assert.Equal(Strings.UnassignedUserNotificationStatus, statusFact.Value);
+
+            // Actions should be present only if ticket is closed
+            Assert.Null(card.Actions);
+        }
+
+        [Fact]
+        public async Task ReturnsSuccessfulOnDeleteQNAPair()
+        {
+            // Arrange
+            qnaServiceProvider.Setup(x => x.GenerateAnswerAsync(It.IsAny<string>(), It.IsAny<bool>(), null, null))
+                .Returns((string question, bool isTestKnowledgeBase, string previousQnAId, string previousUserQuery) =>
+                    Task.FromResult(new QnASearchResultList
+                    {
+                        Answers = new List<QnASearchResult>
+                        {
+                            new QnASearchResult(new List<string>
+                            {
+                                question
+                            }) {Id = 1, Metadata = new List<MetadataDTO>()}
+                        }
+                    }));
+
+            // Create conversation activity
+            var conversationActivity = GetActivityWithText(Constants.DeleteCommand, new AdaptiveSubmitActionData
+            {
+                UpdateHistoryData = string.Empty,
+                OriginalQuestion = nameof(ReturnsSuccessfulOnDeleteQNAPair)
+            });
+
+            // Act
+            // Send the message activity to the bot.
+            await this.smeBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+
+            // Assert we got the typing message
+            var reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(ActivityTypes.Typing, reply.Type);
+
+            // Assert that no extra reply received
+            reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Null(reply);
+        }
+
+
+        [Fact]
+        public async Task ReturnsWaitingOnDeleteQNANonPublishedPair()
+        {
+            // Arrange
+            qnaServiceProvider.Setup(x => x.GenerateAnswerAsync(It.IsAny<string>(), It.IsAny<bool>(), null, null))
+                .Returns((string question, bool isTestKnowledgeBase, string previousQnAId, string previousUserQuery) =>
+                    Task.FromResult(new QnASearchResultList
+                    {
+                        Answers = new List<QnASearchResult>
+                        {
+                            new QnASearchResult(new List<string>
+                            {
+                                question
+                            }) {Id = isTestKnowledgeBase ? 1 : -1, Metadata = new List<MetadataDTO>()}
+                        }
+                    }));
+
+            // Create conversation activity
+            var conversationActivity = GetActivityWithText(Constants.DeleteCommand, new AdaptiveSubmitActionData
+            {
+                UpdateHistoryData = string.Empty,
+                OriginalQuestion = nameof(ReturnsWaitingOnDeleteQNANonPublishedPair)
+            });
+
+            // Act
+            // Send the message activity to the bot.
+            await this.smeBotAdapter.ProcessActivityAsync(conversationActivity, this.sut.OnTurnAsync, CancellationToken.None);
+
+            // Assert we got the typing message
+            var reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(ActivityTypes.Typing, reply.Type);
+
+            // Assert that we received a wait message.
+            reply = (IMessageActivity)this.smeBotAdapter.GetNextReply();
+            Assert.Equal(string.Format(CultureInfo.InvariantCulture, Strings.WaitMessage, nameof(ReturnsWaitingOnDeleteQNANonPublishedPair)), reply.Text);
         }
     }
 }
