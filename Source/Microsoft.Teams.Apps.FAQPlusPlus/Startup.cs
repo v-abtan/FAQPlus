@@ -38,7 +38,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
         /// <param name="configuration">Startup Configuration.</param>
         public Startup(IConfiguration configuration)
         {
-            this.Configuration = configuration;
+            this.Configuration = configuration
         }
 
         /// <summary>
