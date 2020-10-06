@@ -422,8 +422,16 @@ https://azure.microsoft.com/en-us/global-infrastructure/services/?products=logic
             Write-Host "Deploying app services, storage accounts, bot service, and cognitive services..." -ForegroundColor Yellow
             az deployment group create --resource-group $parameters.ResourceGroupName.Value --subscription $parameters.SubscriptionId.Value --template-file 'azuredeploy.json' --parameters "baseResourceName=$($parameters.BaseResourceName.Value)" "botClientId=$botAppId" "smeBotClientId=$smeBotAppId" "botClientSecret=$userAppSecret" "smeBotClientSecret=$smeAppSecret" "configAppClientId=$configAppId" "configAdminUPNList=$($parameters.ConfigAdminUPNList.Value)" "appDisplayName=$($parameters.AppDisplayName.Value)" "appDescription=$($parameters.AppDescription.Value)" "appIconUrl=$($parameters.AppIconUrl.Value)" "sku=$($parameters.Sku.Value)" "planSize=$($parameters.PlanSize.Value)" "qnaMakerSku=$($parameters.QnaMakerSku.Value)" "searchServiceSku=$($parameters.SearchServiceSku.Value)" "gitRepoUrl=$($parameters.GitRepoUrl.Value)" "gitBranch=$($parameters.GitBranch.Value)"
             if($LASTEXITCODE -ne 0){
-                CollectARMDeploymentLogs
+                CollectARMDeploymentLogs -ErrorAction Stop 
                 Throw "ERROR: ARM template deployment error."
+            }
+            else{
+                # sync app services code deployment (ARM deployment will not sync automatically in some cases)
+                $appServicesNames = @($parameters.BaseResourceName.Value, #botAppName
+                "$($parameters.BaseResourceName.Value)-config", #configAppName
+                "$($parameters.BaseResourceName.Value)-function" #functionAppName
+                )
+                $appServicesNames | ForEach-Object {az webapp deployment source sync --name $_ --resource-group $parameters.ResourceGroupName.Value}
             }
             Write-Host "Finished deploying resources." -ForegroundColor Green
         }

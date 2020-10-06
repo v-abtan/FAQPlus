@@ -23,7 +23,7 @@ Connect-AzAccount : The provided account **.onmicrosoft.com does not have access
 
 Exception calling "AcquireAccessToken" with "1" argument(s): "multiple_matching_tokens_detected: The cache contains multiple tokens satisfying the requirements
 
-**Fix**: This means user is logged-in with multiple accounts in the current powershell session. Close the shell window and open a new one."
+**Fix**: This means user is logged-in with multiple accounts in the current powershell session. Close the shell window and open a new one. If issue persists, please run this command in terminal "Clear-AzContext", then confirm by entering Y and run deployment again.
 
 
 **4. Azure AD app permission consent error**
