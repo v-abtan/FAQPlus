@@ -34,7 +34,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
     /// </summary>
     public class UserActivityHandler : CommonTeamsActivityHandler
     {
-
         /// <summary>
         /// Initializes a new instance of the <see cref="FaqPlusPlusBot"/> class.
         /// </summary>
