@@ -1,4 +1,4 @@
-// <copyright file="SmeActivityHandler.cs" company="Microsoft">
+// <copyright file="FaqPlusPlusBot.cs" company="Microsoft">
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
@@ -14,6 +14,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
     using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
     using Microsoft.Bot.Builder;
+    using Microsoft.Bot.Builder.Teams;
     using Microsoft.Bot.Connector.Authentication;
     using Microsoft.Bot.Schema;
     using Microsoft.Bot.Schema.Teams;
@@ -32,9 +33,9 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
     using ErrorResponseException = Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models.ErrorResponseException;
 
     /// <summary>
-    /// Class that handles the sme teams activity of Faq Plus bot and messaging extension.
+    /// Class that handles the teams activity of Faq Plus bot and messaging extension.
     /// </summary>
-    public class SmeActivityHandler : CommonTeamsActivityHandler
+    public class FaqPlusPlusBot : TeamsActivityHandler
     {
         /// <summary>
         ///  Default access cache expiry in days to check if user using the app is a valid SME or not.
@@ -57,17 +58,38 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         private const int TaskModuleWidth = 500;
 
         /// <summary>
+        /// Represents the conversation type as personal.
+        /// </summary>
+        private const string ConversationTypePersonal = "personal";
+
+        /// <summary>
+        ///  Represents the conversation type as channel.
+        /// </summary>
+        private const string ConversationTypeChannel = "channel";
+
+        /// <summary>
         /// ChangeStatus - text that triggers change status action by SME.
         /// </summary>
         private const string ChangeStatus = "change status";
 
+        /// <summary>
+        /// Represents a set of key/value application configuration properties for FaqPlusPlus bot.
+        /// </summary>
+        private readonly BotSettings options;
+
+        private readonly IConfigurationDataProvider configurationProvider;
+        private readonly MicrosoftAppCredentials microsoftAppCredentials;
+        private readonly ITicketsProvider ticketsProvider;
         private readonly IActivityStorageProvider activityStorageProvider;
         private readonly ISearchService searchService;
         private readonly string appId;
         private readonly BotFrameworkAdapter botAdapter;
         private readonly IMemoryCache accessCache;
         private readonly int accessCacheExpiryInDays;
+        private readonly string appBaseUri;
         private readonly IKnowledgeBaseSearchService knowledgeBaseSearchService;
+        private readonly ILogger<FaqPlusPlusBot> logger;
+        private readonly IQnaServiceProvider qnaServiceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FaqPlusPlusBot"/> class.
@@ -83,7 +105,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         /// <param name="knowledgeBaseSearchService">KnowledgeBaseSearchService dependency injection.</param>
         /// <param name="optionsAccessor">A set of key/value application configuration properties for FaqPlusPlus bot.</param>
         /// <param name="logger">Instance to send logs to the Application Insights service.</param>
-        public SmeActivityHandler(
+        public FaqPlusPlusBot(
             Common.Providers.IConfigurationDataProvider configurationProvider,
             MicrosoftAppCredentials microsoftAppCredentials,
             ITicketsProvider ticketsProvider,
@@ -94,14 +116,19 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             IMemoryCache memoryCache,
             IKnowledgeBaseSearchService knowledgeBaseSearchService,
             IOptionsMonitor<BotSettings> optionsAccessor,
-            ILogger<SmeActivityHandler> logger)
-            : base(configurationProvider, microsoftAppCredentials, ticketsProvider, qnaServiceProvider, optionsAccessor.CurrentValue, logger)
+            ILogger<FaqPlusPlusBot> logger)
         {
+            this.configurationProvider = configurationProvider;
+            this.microsoftAppCredentials = microsoftAppCredentials;
+            this.ticketsProvider = ticketsProvider;
+            this.options = optionsAccessor.CurrentValue;
+            this.qnaServiceProvider = qnaServiceProvider;
             this.activityStorageProvider = activityStorageProvider;
             this.searchService = searchService;
-            this.appId = this.options.SmeAppId;
+            this.appId = this.options.MicrosoftAppId;
             this.botAdapter = botAdapter;
             this.accessCache = memoryCache;
+            this.logger = logger;
             this.accessCacheExpiryInDays = this.options.AccessCacheExpiryInDays;
 
             if (this.accessCacheExpiryInDays <= 0)
@@ -110,7 +137,46 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 this.logger.LogInformation($"Configuration option is not present or out of range for AccessCacheExpiryInDays and the default value is set to: {this.accessCacheExpiryInDays}", SeverityLevel.Information);
             }
 
+            this.appBaseUri = this.options.AppBaseUri;
             this.knowledgeBaseSearchService = knowledgeBaseSearchService;
+        }
+
+        /// <summary>
+        /// Handles an incoming activity.
+        /// </summary>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>
+        /// Reference link: https://docs.microsoft.com/en-us/dotnet/api/microsoft.bot.builder.activityhandler.onturnasync?view=botbuilder-dotnet-stable.
+        /// </remarks>
+        public override Task OnTurnAsync(
+            ITurnContext turnContext,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (turnContext != null & !this.IsActivityFromExpectedTenant(turnContext))
+                {
+                    this.logger.LogWarning($"Unexpected tenant id {turnContext?.Activity.Conversation.TenantId}");
+                    return Task.CompletedTask;
+                }
+
+                // Get the current culture info to use in resource files
+                string locale = turnContext?.Activity.Entities?.FirstOrDefault(entity => entity.Type == "clientInfo")?.Properties["locale"]?.ToString();
+
+                if (!string.IsNullOrEmpty(locale))
+                {
+                    CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(locale);
+                }
+
+                return base.OnTurnAsync(turnContext, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Error at OnTurnAsync()");
+                return base.OnTurnAsync(turnContext, cancellationToken);
+            }
         }
 
         /// <summary>
@@ -134,7 +200,14 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (message.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypes.Channel:
+                    case ConversationTypePersonal:
+                        await this.OnMessageActivityInPersonalChatAsync(
+                            message,
+                            turnContext,
+                            cancellationToken).ConfigureAwait(false);
+                        break;
+
+                    case ConversationTypeChannel:
                         await this.OnMessageActivityInChannelAsync(
                             message,
                             turnContext,
@@ -181,7 +254,11 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (activity.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypes.Channel:
+                    case ConversationTypePersonal:
+                        await this.OnMembersAddedToPersonalChatAsync(activity.MembersAdded, turnContext).ConfigureAwait(false);
+                        return;
+
+                    case ConversationTypeChannel:
                         await this.OnMembersAddedToTeamAsync(activity.MembersAdded, turnContext, cancellationToken).ConfigureAwait(false);
                         return;
 
@@ -627,6 +704,27 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         }
 
         /// <summary>
+        /// Handle 1:1 chat with members who started chat for the first time.
+        /// </summary>
+        /// <param name="membersAdded">Channel account information needed to route a message.</param>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        private async Task OnMembersAddedToPersonalChatAsync(
+            IList<ChannelAccount> membersAdded,
+            ITurnContext<IConversationUpdateActivity> turnContext)
+        {
+            var activity = turnContext.Activity;
+            if (membersAdded.Any(channelAccount => channelAccount.Id == activity.Recipient.Id))
+            {
+                // User started chat with the bot in personal scope, for the first time.
+                this.logger.LogInformation($"Bot added to 1:1 chat {activity.Conversation.Id}");
+                var welcomeText = await this.configurationProvider.GetSavedEntityDetailAsync(ConfigurationEntityTypes.WelcomeMessageText).ConfigureAwait(false);
+                var userWelcomeCardAttachment = WelcomeCard.GetCard(welcomeText);
+                await turnContext.SendActivityAsync(MessageFactory.Attachment(userWelcomeCardAttachment)).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// Handle members added conversationUpdate event in team.
         /// </summary>
         /// <param name="membersAdded">Channel account information needed to route a message.</param>
@@ -648,6 +746,52 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 var botDisplayName = turnContext.Activity.Recipient.Name;
                 var teamWelcomeCardAttachment = WelcomeTeamCard.GetCard();
                 await this.SendCardToTeamAsync(turnContext, teamWelcomeCardAttachment, teamDetails.Team.Id, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Handle message activity in 1:1 chat.
+        /// </summary>
+        /// <param name="message">A message in a conversation.</param>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        private async Task OnMessageActivityInPersonalChatAsync(
+            IMessageActivity message,
+            ITurnContext<IMessageActivity> turnContext,
+            CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrEmpty(message.ReplyToId) && (message.Value != null) && ((JObject)message.Value).HasValues)
+            {
+                this.logger.LogInformation("Card submit in 1:1 chat");
+                await this.OnAdaptiveCardSubmitInPersonalChatAsync(message, turnContext, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            string text = message.Text?.ToLower()?.Trim() ?? string.Empty;
+
+            switch (text)
+            {
+                case Constants.AskAnExpert:
+                    this.logger.LogInformation("Sending user ask an expert card");
+                    await turnContext.SendActivityAsync(MessageFactory.Attachment(AskAnExpertCard.GetCard())).ConfigureAwait(false);
+                    break;
+
+                case Constants.ShareFeedback:
+                    this.logger.LogInformation("Sending user feedback card");
+                    await turnContext.SendActivityAsync(MessageFactory.Attachment(ShareFeedbackCard.GetCard())).ConfigureAwait(false);
+                    break;
+
+                case Constants.TakeATour:
+                    this.logger.LogInformation("Sending user tour card");
+                    var userTourCards = TourCarousel.GetUserTourCards(this.appBaseUri);
+                    await turnContext.SendActivityAsync(MessageFactory.Carousel(userTourCards)).ConfigureAwait(false);
+                    break;
+
+                default:
+                    this.logger.LogInformation("Sending input to QnAMaker");
+                    await this.GetQuestionAnswerReplyAsync(turnContext, message).ConfigureAwait(false);
+                    break;
             }
         }
 
@@ -725,6 +869,97 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 // Throw the error at calling place, if there is any generic exception which is not caught by above conditon.
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Handle adaptive card submit in 1:1 chat.
+        /// Submits the question or feedback to the SME team.
+        /// </summary>
+        /// <param name="message">A message in a conversation.</param>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        private async Task OnAdaptiveCardSubmitInPersonalChatAsync(
+            IMessageActivity message,
+            ITurnContext<IMessageActivity> turnContext,
+            CancellationToken cancellationToken)
+        {
+            Attachment smeTeamCard = null;      // Notification to SME team
+            Attachment userCard = null;         // Acknowledgement to the user
+            TicketEntity newTicket = null;      // New ticket
+
+            switch (message?.Text)
+            {
+                case Constants.AskAnExpert:
+                    this.logger.LogInformation("Sending user ask an expert card (from answer)");
+                    var askAnExpertPayload = ((JObject)message.Value).ToObject<ResponseCardPayload>();
+                    await turnContext.SendActivityAsync(MessageFactory.Attachment(AskAnExpertCard.GetCard(askAnExpertPayload))).ConfigureAwait(false);
+                    break;
+
+                case Constants.ShareFeedback:
+                    this.logger.LogInformation("Sending user share feedback card (from answer)");
+                    var shareFeedbackPayload = ((JObject)message.Value).ToObject<ResponseCardPayload>();
+                    await turnContext.SendActivityAsync(MessageFactory.Attachment(ShareFeedbackCard.GetCard(shareFeedbackPayload))).ConfigureAwait(false);
+                    break;
+
+                case AskAnExpertCard.AskAnExpertSubmitText:
+                    this.logger.LogInformation("Received question for expert");
+                    newTicket = await AdaptiveCardHelper.AskAnExpertSubmitText(message, turnContext, cancellationToken, this.ticketsProvider).ConfigureAwait(false);
+                    if (newTicket != null)
+                    {
+                        smeTeamCard = new SmeTicketCard(newTicket).ToAttachment(message?.LocalTimestamp);
+                        userCard = new UserNotificationCard(newTicket).ToAttachment(Strings.NotificationCardContent, message?.LocalTimestamp);
+                    }
+
+                    break;
+
+                case ShareFeedbackCard.ShareFeedbackSubmitText:
+                    this.logger.LogInformation("Received app feedback");
+                    smeTeamCard = await AdaptiveCardHelper.ShareFeedbackSubmitText(message, turnContext, cancellationToken).ConfigureAwait(false);
+                    if (smeTeamCard != null)
+                    {
+                        await turnContext.SendActivityAsync(MessageFactory.Text(Strings.ThankYouTextContent)).ConfigureAwait(false);
+                    }
+
+                    break;
+
+                default:
+                    var payload = ((JObject)message.Value).ToObject<ResponseCardPayload>();
+
+                    if (payload.IsPrompt)
+                    {
+                        this.logger.LogInformation("Sending input to QnAMaker for prompt");
+                        await this.GetQuestionAnswerReplyAsync(turnContext, message).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        this.logger.LogWarning($"Unexpected text in submit payload: {message.Text}");
+                    }
+
+                    break;
+            }
+
+            string expertTeamId = await this.configurationProvider.GetSavedEntityDetailAsync(ConfigurationEntityTypes.TeamId).ConfigureAwait(false);
+
+            // Send message to SME team.
+            if (smeTeamCard != null)
+            {
+                var resourceResponse = await this.SendCardToTeamAsync(turnContext, smeTeamCard, expertTeamId, cancellationToken).ConfigureAwait(false);
+
+                // If a ticket was created, update the ticket with the conversation info.
+                if (newTicket != null)
+                {
+                    newTicket.SmeCardActivityId = resourceResponse.ActivityId;
+                    newTicket.SmeThreadConversationId = resourceResponse.Id;
+                    await this.ticketsProvider.UpsertTicketAsync(newTicket).ConfigureAwait(false);
+                }
+            }
+
+            // Send acknowledgment to the user
+            if (userCard != null)
+            {
+                await turnContext.SendActivityAsync(MessageFactory.Attachment(userCard), cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -833,21 +1068,28 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             if (userNotification != null)
             {
                 userNotification.Conversation = new ConversationAccount { Id = ticket.RequesterConversationId };
-                var conversationReference = new ConversationReference
-                {
-                    ServiceUrl = turnContext.Activity.ServiceUrl,
-                    Conversation = userNotification.Conversation,
-                };
+                var userResponse = await turnContext.Adapter.SendActivitiesAsync(turnContext, new Activity[] { (Activity)userNotification }, cancellationToken).ConfigureAwait(false);
+                this.logger.LogInformation($"User notified of update to ticket {ticket.TicketId}, activityId = {userResponse.FirstOrDefault()?.Id}");
+            }
+        }
 
-                await this.botAdapter.ContinueConversationAsync(
-                    ticket.RequesterBotId,
-                    conversationReference,
-                    async (newTurnContext, newCancellationToken) =>
-                    {
-                        var userResponse = await newTurnContext.Adapter.SendActivitiesAsync(newTurnContext, new Activity[] { (Activity)userNotification }, newCancellationToken).ConfigureAwait(false);
-                        this.logger.LogInformation($"User notified of update to ticket {ticket.TicketId}, activityId = {userResponse.FirstOrDefault()?.Id}");
-                    },
-                    default(CancellationToken)).ConfigureAwait(false);
+        /// <summary>
+        /// Send typing indicator to the user.
+        /// </summary>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        private async Task SendTypingIndicatorAsync(ITurnContext turnContext)
+        {
+            try
+            {
+                var typingActivity = turnContext.Activity.CreateReply();
+                typingActivity.Type = ActivityTypes.Typing;
+                await turnContext.SendActivityAsync(typingActivity);
+            }
+            catch (Exception ex)
+            {
+                // Do not fail on errors sending the typing indicator
+                this.logger.LogWarning(ex, "Failed to send a typing indicator");
             }
         }
 
@@ -891,6 +1133,16 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 cancellationToken).ConfigureAwait(false);
 
             return await taskCompletionSource.Task.ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verify if the tenant Id in the message is the same tenant Id used when application was configured.
+        /// </summary>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <returns>Boolean value where true represent tenant is valid while false represent tenant in not valid.</returns>
+        private bool IsActivityFromExpectedTenant(ITurnContext turnContext)
+        {
+            return turnContext.Activity.Conversation.TenantId == this.options.TenantId;
         }
 
         /// <summary>
@@ -1154,6 +1406,77 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                         return default;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Get the reply to a question asked by end user.
+        /// </summary>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <param name="message">Text message.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        private async Task GetQuestionAnswerReplyAsync(
+            ITurnContext<IMessageActivity> turnContext,
+            IMessageActivity message)
+        {
+            string text = message.Text?.ToLower()?.Trim() ?? string.Empty;
+
+            try
+            {
+                var queryResult = new QnASearchResultList();
+
+                ResponseCardPayload payload = new ResponseCardPayload();
+
+                if (!string.IsNullOrEmpty(message.ReplyToId) && (message.Value != null))
+                {
+                    payload = ((JObject)message.Value).ToObject<ResponseCardPayload>();
+                }
+
+                queryResult = await this.qnaServiceProvider.GenerateAnswerAsync(question: text, isTestKnowledgeBase: false, payload.PreviousQuestions?.First().Id.ToString(), payload.PreviousQuestions?.First().Questions.First()).ConfigureAwait(false);
+
+                if (queryResult.Answers.First().Id != -1)
+                {
+                    var answerData = queryResult.Answers.First();
+                    AnswerModel answerModel = new AnswerModel();
+
+                    if (Validators.IsValidJSON(answerData.Answer))
+                    {
+                        answerModel = JsonConvert.DeserializeObject<AnswerModel>(answerData.Answer);
+                    }
+
+                    if (!string.IsNullOrEmpty(answerModel?.Title) || !string.IsNullOrEmpty(answerModel?.Subtitle) || !string.IsNullOrEmpty(answerModel?.ImageUrl) || !string.IsNullOrEmpty(answerModel?.RedirectionUrl))
+                    {
+                        await turnContext.SendActivityAsync(MessageFactory.Attachment(MessagingExtensionQnaCard.GetEndUserRichCard(text, answerData))).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await turnContext.SendActivityAsync(MessageFactory.Attachment(ResponseCard.GetCard(answerData, text, this.appBaseUri, payload))).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Attachment(UnrecognizedInputCard.GetCard(text))).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Check if knowledge base is empty and has not published yet when end user is asking a question to bot.
+                if (((ErrorResponseException)ex).Response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var knowledgeBaseId = await this.configurationProvider.GetSavedEntityDetailAsync(Constants.KnowledgeBaseEntityId).ConfigureAwait(false);
+                    var hasPublished = await this.qnaServiceProvider.GetInitialPublishedStatusAsync(knowledgeBaseId).ConfigureAwait(false);
+
+                    // Check if knowledge base has not published yet.
+                    if (!hasPublished)
+                    {
+                        this.logger.LogError(ex, "Error while fetching the qna pair: knowledge base may be empty or it has not published yet.");
+                        await turnContext.SendActivityAsync(MessageFactory.Attachment(UnrecognizedInputCard.GetCard(text))).ConfigureAwait(false);
+                        return;
+                    }
+                }
+
+                // Throw the error at calling place, if there is any generic exception which is not caught.
+                throw;
             }
         }
     }
