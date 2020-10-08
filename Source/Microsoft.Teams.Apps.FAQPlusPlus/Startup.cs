@@ -27,10 +27,10 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
     /// </summary>
     public class Startup
     {
-        private const string MicrosoftSmeAppId = nameof(MicrosoftSmeAppId);
-        private const string MicrosoftUserAppId = nameof(MicrosoftUserAppId);
-        private const string MicrosoftSmeAppPassword = nameof(MicrosoftSmeAppPassword);
-        private const string MicrosoftUserAppPassword = nameof(MicrosoftUserAppPassword);
+        private const string SmeBotMicrosoftAppId = nameof(SmeBotMicrosoftAppId);
+        private const string UserBotMicrosoftAppId = nameof(UserBotMicrosoftAppId);
+        private const string SmeBotMicrosoftAppPassword = nameof(SmeBotMicrosoftAppPassword);
+        private const string UserBotMicrosoftAppPassword = nameof(UserBotMicrosoftAppPassword);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Startup"/> class.
@@ -92,8 +92,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
             {
                 botSettings.AccessCacheExpiryInDays = Convert.ToInt32(this.Configuration["AccessCacheExpiryInDays"]);
                 botSettings.AppBaseUri = this.Configuration["AppBaseUri"];
-                botSettings.UserAppId = this.Configuration[MicrosoftUserAppId];
-                botSettings.SmeAppId = this.Configuration[MicrosoftSmeAppId];
+                botSettings.UserAppId = this.Configuration[UserBotMicrosoftAppId];
+                botSettings.SmeAppId = this.Configuration[SmeBotMicrosoftAppId];
                 botSettings.TenantId = this.Configuration["TenantId"];
             });
 
@@ -104,16 +104,16 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
             {
                 var credentials = new Dictionary<string, string>
                 {
-                    { this.Configuration[MicrosoftSmeAppId], this.Configuration[MicrosoftSmeAppPassword] },
-                    { this.Configuration[MicrosoftUserAppId], this.Configuration[MicrosoftUserAppPassword] },
+                    { this.Configuration[SmeBotMicrosoftAppId], this.Configuration[SmeBotMicrosoftAppPassword] },
+                    { this.Configuration[UserBotMicrosoftAppId], this.Configuration[UserBotMicrosoftAppPassword] },
                 };
                 return new ConfigurationCredentialProvider(credentials);
             });
 
             services.AddSingleton<ITicketsProvider>(new TicketsProvider(this.Configuration["StorageConnectionString"]));
             services.AddSingleton<IBotFrameworkHttpAdapter, BotFrameworkHttpAdapter>();
-            services.AddSingleton(new MicrosoftAppCredentials(this.Configuration[MicrosoftUserAppId], this.Configuration[MicrosoftUserAppPassword]));
-            services.AddSingleton(new MicrosoftAppCredentials(this.Configuration[MicrosoftSmeAppId], this.Configuration[MicrosoftSmeAppPassword]));
+            services.AddSingleton(new MicrosoftAppCredentials(this.Configuration[UserBotMicrosoftAppId], this.Configuration[UserBotMicrosoftAppPassword]));
+            services.AddSingleton(new MicrosoftAppCredentials(this.Configuration[SmeBotMicrosoftAppId], this.Configuration[SmeBotMicrosoftAppPassword]));
 
             IQnAMakerClient qnaMakerClient = new QnAMakerClient(new ApiKeyServiceClientCredentials(this.Configuration["QnAMakerSubscriptionKey"])) { Endpoint = this.Configuration["QnAMakerApiEndpointUrl"] };
             string endpointKey = Task.Run(() => qnaMakerClient.EndpointKeys.GetKeysAsync()).Result.PrimaryEndpointKey;
@@ -129,8 +129,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
             services.AddSingleton<ISearchService, SearchService>();
             services.AddSingleton<IMemoryCache, MemoryCache>();
             services.AddTransient(sp => (BotFrameworkAdapter)sp.GetRequiredService<IBotFrameworkHttpAdapter>());
-            services.AddSingleton<SmeActivityHandler>();
-            services.AddSingleton<UserActivityHandler>();
+            services.AddTransient<SmeActivityHandler>();
+            services.AddTransient<UserActivityHandler>();
 
             // Create the telemetry middleware(used by the telemetry initializer) to track conversation events
             services.AddSingleton<TelemetryLoggerMiddleware>();

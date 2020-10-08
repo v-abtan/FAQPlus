@@ -18,23 +18,20 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Helpers
         /// <returns>bot id.</returns>
         public static string GetSanitizedId(string id)
         {
+            var invalidParameterValueMessage = "Invalid value for parameter id.";
             if (string.IsNullOrEmpty(id))
             {
-                throw new ArgumentNullException(nameof(id), "Invalid value for parameter id.");
+                throw new ArgumentNullException(nameof(id), invalidParameterValueMessage);
             }
 
-            string recipientId;
-            try
+            const string idPrefix = "28:";
+            var recipientIdParts = id.Split(new[] { idPrefix }, 2, StringSplitOptions.None);
+            if (recipientIdParts.Length != 2)
             {
-                var recipientIdParts = id.Split(':');
-                recipientId = recipientIdParts.Length > 0 ? recipientIdParts[recipientIdParts.Length - 1] : null;
-            }
-            catch
-            {
-                throw;
+                throw new ArgumentNullException(nameof(id), invalidParameterValueMessage);
             }
 
-            return recipientId;
+            return recipientIdParts[1];
         }
     }
 }

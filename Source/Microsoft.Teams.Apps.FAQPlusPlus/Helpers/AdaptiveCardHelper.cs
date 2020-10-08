@@ -2,8 +2,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // </copyright>
 
-using Microsoft.Teams.Apps.FAQPlusPlus.Common.Helpers;
-
 namespace Microsoft.Teams.Apps.FAQPlusPlus.Helpers
 {
     using System;
@@ -14,6 +12,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Helpers
     using Microsoft.Bot.Schema;
     using Microsoft.Bot.Schema.Teams;
     using Microsoft.Teams.Apps.FAQPlusPlus.Cards;
+    using Microsoft.Teams.Apps.FAQPlusPlus.Common.Helpers;
     using Microsoft.Teams.Apps.FAQPlusPlus.Common.Models;
     using Microsoft.Teams.Apps.FAQPlusPlus.Common.Providers;
     using Newtonsoft.Json;

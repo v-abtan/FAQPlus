@@ -61,23 +61,13 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         /// </summary>
         private const string ChangeStatus = "change status";
 
-        /// <summary>
-        /// Represents a set of key/value application configuration properties for FaqPlusPlus bot.
-        /// </summary>
-        private readonly BotSettings options;
-
-        private readonly IConfigurationDataProvider configurationProvider;
-        private readonly MicrosoftAppCredentials microsoftAppCredentials;
-        private readonly ITicketsProvider ticketsProvider;
         private readonly IActivityStorageProvider activityStorageProvider;
         private readonly ISearchService searchService;
         private readonly string appId;
         private readonly BotFrameworkAdapter botAdapter;
         private readonly IMemoryCache accessCache;
         private readonly int accessCacheExpiryInDays;
-        private readonly string appBaseUri;
         private readonly IKnowledgeBaseSearchService knowledgeBaseSearchService;
-        private readonly IQnaServiceProvider qnaServiceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FaqPlusPlusBot"/> class.
@@ -105,13 +95,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             IKnowledgeBaseSearchService knowledgeBaseSearchService,
             IOptionsMonitor<BotSettings> optionsAccessor,
             ILogger<SmeActivityHandler> logger)
-            : base(logger)
+            : base(configurationProvider, microsoftAppCredentials, ticketsProvider, qnaServiceProvider, optionsAccessor.CurrentValue, logger)
         {
-            this.configurationProvider = configurationProvider;
-            this.microsoftAppCredentials = microsoftAppCredentials;
-            this.ticketsProvider = ticketsProvider;
-            this.options = optionsAccessor.CurrentValue;
-            this.qnaServiceProvider = qnaServiceProvider;
             this.activityStorageProvider = activityStorageProvider;
             this.searchService = searchService;
             this.appId = this.options.SmeAppId;
@@ -125,7 +110,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 this.logger.LogInformation($"Configuration option is not present or out of range for AccessCacheExpiryInDays and the default value is set to: {this.accessCacheExpiryInDays}", SeverityLevel.Information);
             }
 
-            this.appBaseUri = this.options.AppBaseUri;
             this.knowledgeBaseSearchService = knowledgeBaseSearchService;
         }
 
@@ -150,7 +134,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (message.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypes.ConversationTypeChannel:
+                    case ConversationTypes.Channel:
                         await this.OnMessageActivityInChannelAsync(
                             message,
                             turnContext,
@@ -197,7 +181,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (activity.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypes.ConversationTypeChannel:
+                    case ConversationTypes.Channel:
                         await this.OnMembersAddedToTeamAsync(activity.MembersAdded, turnContext, cancellationToken).ConfigureAwait(false);
                         return;
 

@@ -6,7 +6,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.Linq;
     using System.Net;
     using System.Threading;
@@ -35,16 +34,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
     /// </summary>
     public class UserActivityHandler : CommonTeamsActivityHandler
     {
-        /// <summary>
-        /// Represents a set of key/value application configuration properties for FaqPlusPlus bot.
-        /// </summary>
-        private readonly BotSettings options;
-
-        private readonly IConfigurationDataProvider configurationProvider;
-        private readonly MicrosoftAppCredentials microsoftAppCredentials;
-        private readonly ITicketsProvider ticketsProvider;
-        private readonly string appBaseUri;
-        private readonly IQnaServiceProvider qnaServiceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FaqPlusPlusBot"/> class.
@@ -62,52 +51,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             IQnaServiceProvider qnaServiceProvider,
             IOptionsMonitor<BotSettings> optionsAccessor,
             ILogger<UserActivityHandler> logger)
-            : base(logger)
+            : base(configurationProvider, microsoftAppCredentials, ticketsProvider, qnaServiceProvider, optionsAccessor.CurrentValue, logger)
         {
-            this.configurationProvider = configurationProvider;
-            this.microsoftAppCredentials = microsoftAppCredentials;
-            this.ticketsProvider = ticketsProvider;
-            this.options = optionsAccessor.CurrentValue;
-            this.qnaServiceProvider = qnaServiceProvider;
-            this.appBaseUri = this.options.AppBaseUri;
-        }
-
-        /// <summary>
-        /// Handles an incoming activity.
-        /// </summary>
-        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
-        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>
-        /// Reference link: https://docs.microsoft.com/en-us/dotnet/api/microsoft.bot.builder.activityhandler.onturnasync?view=botbuilder-dotnet-stable.
-        /// </remarks>
-        public override Task OnTurnAsync(
-            ITurnContext turnContext,
-            CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (turnContext != null & !this.IsActivityFromExpectedTenant(turnContext))
-                {
-                    this.logger.LogWarning($"Unexpected tenant id {turnContext?.Activity.Conversation.TenantId}");
-                    return Task.CompletedTask;
-                }
-
-                // Get the current culture info to use in resource files
-                string locale = turnContext?.Activity.Entities?.FirstOrDefault(entity => entity.Type == "clientInfo")?.Properties["locale"]?.ToString();
-
-                if (!string.IsNullOrEmpty(locale))
-                {
-                    CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(locale);
-                }
-
-                return base.OnTurnAsync(turnContext, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex, "Error at OnTurnAsync()");
-                return base.OnTurnAsync(turnContext, cancellationToken);
-            }
         }
 
         /// <summary>
@@ -131,7 +76,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (message.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypes.ConversationTypePersonal:
+                    case ConversationTypes.Personal:
                         await this.OnMessageActivityInPersonalChatAsync(
                             message,
                             turnContext,
@@ -178,7 +123,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 switch (activity.Conversation.ConversationType.ToLower())
                 {
-                    case ConversationTypes.ConversationTypePersonal:
+                    case ConversationTypes.Personal:
                         await this.OnMembersAddedToPersonalChatAsync(activity.MembersAdded, turnContext).ConfigureAwait(false);
                         return;
 
@@ -412,16 +357,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 cancellationToken).ConfigureAwait(false);
 
             return await taskCompletionSource.Task.ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Verify if the tenant Id in the message is the same tenant Id used when application was configured.
-        /// </summary>
-        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
-        /// <returns>Boolean value where true represent tenant is valid while false represent tenant in not valid.</returns>
-        private bool IsActivityFromExpectedTenant(ITurnContext turnContext)
-        {
-            return turnContext.Activity.Conversation.TenantId == this.options.TenantId;
         }
 
         /// <summary>

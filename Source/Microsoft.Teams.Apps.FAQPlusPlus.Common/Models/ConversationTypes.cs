@@ -12,11 +12,11 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Models
         /// <summary>
         /// Represents the conversation type as personal.
         /// </summary>
-        public const string ConversationTypePersonal = "personal";
+        public const string Personal = "personal";
 
         /// <summary>
         ///  Represents the conversation type as channel.
         /// </summary>
-        public const string ConversationTypeChannel = "channel";
+        public const string Channel = "channel";
     }
 }
