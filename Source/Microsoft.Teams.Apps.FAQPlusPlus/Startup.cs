@@ -112,8 +112,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
 
             services.AddSingleton<ITicketsProvider>(new TicketsProvider(this.Configuration["StorageConnectionString"]));
             services.AddSingleton<IBotFrameworkHttpAdapter, BotFrameworkHttpAdapter>();
-            //services.AddSingleton(new MicrosoftAppCredentials(this.Configuration[UserBotMicrosoftAppId], this.Configuration[UserBotMicrosoftAppPassword]));
-            //services.AddSingleton(new MicrosoftAppCredentials(this.Configuration[SmeBotMicrosoftAppId], this.Configuration[SmeBotMicrosoftAppPassword]));
+            services.AddSingleton(new MicrosoftAppCredentials(this.Configuration[SmeBotMicrosoftAppId], this.Configuration[SmeBotMicrosoftAppPassword]));
 
             IQnAMakerClient qnaMakerClient = new QnAMakerClient(new ApiKeyServiceClientCredentials(this.Configuration["QnAMakerSubscriptionKey"])) { Endpoint = this.Configuration["QnAMakerApiEndpointUrl"] };
             string endpointKey = Task.Run(() => qnaMakerClient.EndpointKeys.GetKeysAsync()).Result.PrimaryEndpointKey;
@@ -132,20 +131,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus
 
             services.AddTransient<SmeActivityHandler>();
             services.AddTransient<UserActivityHandler>();
-
-            services.AddTransient(provider =>
-                ActivatorUtilities.CreateInstance<SmeActivityHandler>(
-                    provider,
-                    new MicrosoftAppCredentials(
-                        this.Configuration[SmeBotMicrosoftAppId],
-                        this.Configuration[SmeBotMicrosoftAppPassword])));
-
-            services.AddTransient(provider =>
-                ActivatorUtilities.CreateInstance<UserActivityHandler>(
-                    provider,
-                    new MicrosoftAppCredentials(
-                        this.Configuration[UserBotMicrosoftAppId],
-                        this.Configuration[UserBotMicrosoftAppPassword])));
 
             // Create the telemetry middleware(used by the telemetry initializer) to track conversation events
             services.AddSingleton<TelemetryLoggerMiddleware>();
