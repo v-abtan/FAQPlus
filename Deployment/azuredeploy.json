@@ -243,19 +243,19 @@
               "value": "bot"
             },
             {
-              "name": "MicrosoftUserAppId",
+              "name": "UserBotMicrosoftAppId",
               "value": "[parameters('botClientId')]"
             },
             {
-              "name": "MicrosoftUserAppPassword",
+              "name": "UserBotMicrosoftAppPassword",
               "value": "[parameters('botClientSecret')]"
             },
             {
-              "name": "MicrosoftSmeAppId",
+              "name": "SmeBotMicrosoftAppId",
               "value": "[parameters('smeBotClientId')]"
             },
             {
-              "name": "MicrosoftSmeAppPassword",
+              "name": "SmeBotMicrosoftAppPassword",
               "value": "[parameters('smeBotClientSecret')]"
             },
             {
