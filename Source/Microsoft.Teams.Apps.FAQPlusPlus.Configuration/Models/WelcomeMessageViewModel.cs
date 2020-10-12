@@ -13,7 +13,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Models
         /// <summary>
         /// Gets or sets welcome message text box to be used in View.
         /// </summary>
-        [Required(ErrorMessage = "Enter a welcome message.")]
+        [Required(ErrorMessageResourceName = "WelcomeTextRequiredMessage", ErrorMessageResourceType = typeof(Strings))]
         [StringLength(maximumLength: 300, ErrorMessageResourceName = "WelcomeTextValidationMessage", ErrorMessageResourceType = typeof(Strings), MinimumLength = 2)]
         [DataType(DataType.Text)]
         [Display(Name = "Welcome message")]

@@ -99,6 +99,15 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enter help tab text..
+        /// </summary>
+        public static string HelpTabRequiredMessage {
+            get {
+                return ResourceManager.GetString("HelpTabRequiredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Provide text which will be displayed in Help tab of the bot and then click on Ok to add or Edit to modify.
         /// </summary>
         public static string HelpTabTextToolTipHoverMessage {
@@ -122,6 +131,15 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration {
         public static string KnowledgeBaseIdInvalidMessage {
             get {
                 return ResourceManager.GetString("KnowledgeBaseIdInvalidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter knowledge base id..
+        /// </summary>
+        public static string KnowledgeBaseIdRequiredMessage {
+            get {
+                return ResourceManager.GetString("KnowledgeBaseIdRequiredMessage", resourceCulture);
             }
         }
         
@@ -171,6 +189,15 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enter team id..
+        /// </summary>
+        public static string TeamIdRequiredMessage {
+            get {
+                return ResourceManager.GetString("TeamIdRequiredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Sorry, unable to save the team id due to an internal error. Try again..
         /// </summary>
         public static string TeamIdSaveErrorMessage {
@@ -212,6 +239,15 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration {
         public static string WelcomeMessageToolTipHoverMessage {
             get {
                 return ResourceManager.GetString("WelcomeMessageToolTipHoverMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter a welcome message..
+        /// </summary>
+        public static string WelcomeTextRequiredMessage {
+            get {
+                return ResourceManager.GetString("WelcomeTextRequiredMessage", resourceCulture);
             }
         }
         

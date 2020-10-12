@@ -14,7 +14,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Models
         /// <summary>
         /// Gets or sets team id textbox to be used in View.
         /// </summary>
-        [Required(ErrorMessage = "Enter team id.")]
+        [Required(ErrorMessageResourceName = "TeamIdRequiredMessage", ErrorMessageResourceType = typeof(Strings))]
         [MinLength(1)]
         [DataType(DataType.Text)]
         [Display(Name = "Team ID")]
