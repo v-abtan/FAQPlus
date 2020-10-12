@@ -17,7 +17,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Models
         [MinLength(1)]
         [DataType(DataType.Text)]
         [Display(Name = "Knowledge base ID")]
-        [RegularExpression(@"(\S)+", ErrorMessage = "Enter knowledge base ID which should not contain any whitespace.")]
+        [RegularExpression(@"(\S)+", ErrorMessageResourceName = "KnowledgeBaseIdValidationMessage", ErrorMessageResourceType = typeof(Strings))]
         public string KnowledgeBaseId { get; set; }
     }
 }

@@ -628,6 +628,24 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Please wait for some time, updates to this question will be available in short time..
+        /// </summary>
+        public static string QnaNotPublishedMessage {
+            get {
+                return ResourceManager.GetString("QnaNotPublishedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to QnA storage limit exceeded and is not able to save the qna pair. Please contact your system administrator to provision additional storage space..
+        /// </summary>
+        public static string QNAStorageExceededMessage {
+            get {
+                return ResourceManager.GetString("QNAStorageExceededMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Question already exist. please add different question..
         /// </summary>
         public static string QuestionAlreadyExistsErrorText {
@@ -1020,6 +1038,15 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Properties {
         public static string ThankYouTextContent {
             get {
                 return ResourceManager.GetString("ThankYouTextContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ticket {0} was not found in the data store.
+        /// </summary>
+        public static string TicketNotFoundErrorMessage {
+            get {
+                return ResourceManager.GetString("TicketNotFoundErrorMessage", resourceCulture);
             }
         }
         

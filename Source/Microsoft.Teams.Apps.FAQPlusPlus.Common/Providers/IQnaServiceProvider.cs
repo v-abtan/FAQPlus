@@ -7,7 +7,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Providers
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
-    using Microsoft.Teams.Apps.FAQPlusPlus.Common.Models;
 
     /// <summary>
     /// Qna maker service provider interface.

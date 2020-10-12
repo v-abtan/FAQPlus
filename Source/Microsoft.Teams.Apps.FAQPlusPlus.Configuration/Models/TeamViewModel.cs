@@ -18,7 +18,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Models
         [MinLength(1)]
         [DataType(DataType.Text)]
         [Display(Name = "Team ID")]
-        [RegularExpression(@"(\S)+", ErrorMessage = "Enter team id which should not contain any whitespace.")]
+        [RegularExpression(@"(\S)+", ErrorMessageResourceName = "TeamIdValidationMessage", ErrorMessageResourceType = typeof(Strings))]
         public string TeamId { get; set; }
     }
 }
