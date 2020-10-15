@@ -55,7 +55,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Controllers
             string teamIdAfterParse = ParseTeamIdFromDeepLink(teamId ?? string.Empty);
             if (string.IsNullOrWhiteSpace(teamIdAfterParse))
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "The provided team id is not valid.");
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, Strings.TeamIdInvalidMessage);
             }
             else
             {
@@ -79,7 +79,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Controllers
             }
             else
             {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "Sorry, unable to save the team id due to an internal error. Try again.");
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, Strings.TeamIdSaveErrorMessage);
             }
         }
 
@@ -108,7 +108,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Controllers
             }
             else
             {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "Sorry, unable to save the knowledge base id due to an internal error. Try again.");
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, Strings.KnowledgeBaseIdSaveErrorMessage);
             }
         }
 
@@ -128,14 +128,14 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Controllers
                 var endpointRefreshStatus = await this.RefreshQnAMakerEndpointKeyAsync().ConfigureAwait(false);
                 if (!endpointRefreshStatus)
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "Sorry, unable to save the QnAMaker endpoint key due to an internal error. Try again.");
+                    return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, Strings.QnaMakerEndpointSaveErrorMessage);
                 }
 
                 return await this.UpsertKnowledgeBaseIdAsync(knowledgeBaseId).ConfigureAwait(false);
             }
             else
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "The provided knowledgebase id is not valid.");
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, Strings.KnowledgeBaseIdInvalidMessage);
             }
         }
 
@@ -165,7 +165,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Controllers
             }
             else
             {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "Sorry, unable to save the welcome message due to an internal error. Try again.");
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, Strings.WelcomeMessageSaveErrorMessage);
             }
         }
 
@@ -200,7 +200,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration.Controllers
             }
             else
             {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "Sorry, unable to save the help tab text due to an internal error. Try again.");
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, Strings.HelpTextSaveErrorMessage);
             }
         }
 

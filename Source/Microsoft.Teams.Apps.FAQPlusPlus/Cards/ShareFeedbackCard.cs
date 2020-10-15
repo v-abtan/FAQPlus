@@ -8,7 +8,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Cards
     using System.Collections.Generic;
     using AdaptiveCards;
     using Microsoft.Bot.Schema;
-    using Microsoft.Bot.Streaming.Payloads;
     using Microsoft.Teams.Apps.FAQPlusPlus.Common.Models;
     using Microsoft.Teams.Apps.FAQPlusPlus.Properties;
 

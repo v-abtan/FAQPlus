@@ -4,8 +4,6 @@
 namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Providers
 {
     using System.Threading.Tasks;
-    using Microsoft.Teams.Apps.FAQPlusPlus.Common.Models;
-    using Microsoft.WindowsAzure.Storage.Table;
 
     /// <summary>
     /// Interface of Configuration provider.

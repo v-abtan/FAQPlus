@@ -276,7 +276,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                     if (!hasPublished)
                     {
                         this.logger.LogError(ex, "Error while fetching the qna pair: knowledge base may be empty or it has not published yet.");
-                        await turnContext.SendActivityAsync("Please wait for some time, updates to this question will be available in short time.").ConfigureAwait(false);
+                        await turnContext.SendActivityAsync(Strings.QnaNotPublishedMessage).ConfigureAwait(false);
                     }
                 }
                 else
@@ -429,7 +429,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 if (((ErrorResponseException)ex).Body?.Error?.Code == ErrorCodeType.QuotaExceeded)
                 {
                     this.logger.LogError(ex, "QnA storage limit exceeded and is not able to save the qna pair. Please contact your system administrator to provision additional storage space.");
-                    await turnContext.SendActivityAsync("QnA storage limit exceeded and is not able to save the qna pair. Please contact your system administrator to provision additional storage space.").ConfigureAwait(false);
+                    await turnContext.SendActivityAsync(Strings.QNAStorageExceededMessage).ConfigureAwait(false);
                     return null;
                 }
 
@@ -704,10 +704,10 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                         break;
                 }
             }
-            catch (Exception ex)
+            catch (ErrorResponseException ex)
             {
                 // Check if expert user is trying to delete the question and knowledge base has not published yet.
-                if (((ErrorResponseException)ex).Response.StatusCode == HttpStatusCode.BadRequest)
+                if (ex.Response.StatusCode == HttpStatusCode.BadRequest)
                 {
                     var knowledgeBaseId = await this.configurationProvider.GetSavedEntityDetailAsync(Constants.KnowledgeBaseEntityId).ConfigureAwait(false);
                     var hasPublished = await this.qnaServiceProvider.GetInitialPublishedStatusAsync(knowledgeBaseId).ConfigureAwait(false);
@@ -748,7 +748,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             var ticket = await this.ticketsProvider.GetTicketAsync(payload.TicketId).ConfigureAwait(false);
             if (ticket == null)
             {
-                await turnContext.SendActivityAsync($"Ticket {payload.TicketId} was not found in the data store").ConfigureAwait(false);
+                await turnContext.SendActivityAsync(string.Format(Strings.TicketNotFoundErrorMessage, payload.TicketId)).ConfigureAwait(false);
                 this.logger.LogInformation($"Ticket {payload.TicketId} was not found in the data store");
                 return;
             }

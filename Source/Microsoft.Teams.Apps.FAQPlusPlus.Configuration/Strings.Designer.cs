@@ -90,11 +90,74 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Help tab text should contain less than 3000 characters..
+        /// </summary>
+        public static string HelpTabMaxLengthErrorMessage {
+            get {
+                return ResourceManager.GetString("HelpTabMaxLengthErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter help tab text..
+        /// </summary>
+        public static string HelpTabRequiredMessage {
+            get {
+                return ResourceManager.GetString("HelpTabRequiredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Provide text which will be displayed in Help tab of the bot and then click on Ok to add or Edit to modify.
         /// </summary>
         public static string HelpTabTextToolTipHoverMessage {
             get {
                 return ResourceManager.GetString("HelpTabTextToolTipHoverMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sorry, unable to save the help tab text due to an internal error. Try again..
+        /// </summary>
+        public static string HelpTextSaveErrorMessage {
+            get {
+                return ResourceManager.GetString("HelpTextSaveErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The provided knowledgebase id is not valid..
+        /// </summary>
+        public static string KnowledgeBaseIdInvalidMessage {
+            get {
+                return ResourceManager.GetString("KnowledgeBaseIdInvalidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter knowledge base id..
+        /// </summary>
+        public static string KnowledgeBaseIdRequiredMessage {
+            get {
+                return ResourceManager.GetString("KnowledgeBaseIdRequiredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sorry, unable to save the knowledge base id due to an internal error. Try again..
+        /// </summary>
+        public static string KnowledgeBaseIdSaveErrorMessage {
+            get {
+                return ResourceManager.GetString("KnowledgeBaseIdSaveErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter knowledge base ID which should not contain any whitespace..
+        /// </summary>
+        public static string KnowledgeBaseIdValidationMessage {
+            get {
+                return ResourceManager.GetString("KnowledgeBaseIdValidationMessage", resourceCulture);
             }
         }
         
@@ -108,6 +171,42 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Sorry, unable to save the QnAMaker endpoint key due to an internal error. Try again..
+        /// </summary>
+        public static string QnaMakerEndpointSaveErrorMessage {
+            get {
+                return ResourceManager.GetString("QnaMakerEndpointSaveErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The provided team id is not valid..
+        /// </summary>
+        public static string TeamIdInvalidMessage {
+            get {
+                return ResourceManager.GetString("TeamIdInvalidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter team id..
+        /// </summary>
+        public static string TeamIdRequiredMessage {
+            get {
+                return ResourceManager.GetString("TeamIdRequiredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sorry, unable to save the team id due to an internal error. Try again..
+        /// </summary>
+        public static string TeamIdSaveErrorMessage {
+            get {
+                return ResourceManager.GetString("TeamIdSaveErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Provide a team id deeplink which will be used by bot and then click on Ok to add or Edit to modify.
         /// </summary>
         public static string TeamIdToolTipHoverMessage {
@@ -117,11 +216,47 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Configuration {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enter team id which should not contain any whitespace..
+        /// </summary>
+        public static string TeamIdValidationMessage {
+            get {
+                return ResourceManager.GetString("TeamIdValidationMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sorry, unable to save the welcome message due to an internal error. Try again..
+        /// </summary>
+        public static string WelcomeMessageSaveErrorMessage {
+            get {
+                return ResourceManager.GetString("WelcomeMessageSaveErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Provide a welcome message which will be used by bot and then click on Ok to add or Edit to modify.
         /// </summary>
         public static string WelcomeMessageToolTipHoverMessage {
             get {
                 return ResourceManager.GetString("WelcomeMessageToolTipHoverMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter a welcome message..
+        /// </summary>
+        public static string WelcomeTextRequiredMessage {
+            get {
+                return ResourceManager.GetString("WelcomeTextRequiredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter welcome message which should contain less than 300 characters..
+        /// </summary>
+        public static string WelcomeTextValidationMessage {
+            get {
+                return ResourceManager.GetString("WelcomeTextValidationMessage", resourceCulture);
             }
         }
     }

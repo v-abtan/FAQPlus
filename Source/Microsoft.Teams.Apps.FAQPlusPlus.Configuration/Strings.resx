@@ -136,20 +136,80 @@ You can ask the following questions:
 * What things are available here right now?</value>
     <comment>Default welcome message text to be stored in configuration app</comment>
   </data>
+  <data name="HelpTabMaxLengthErrorMessage" xml:space="preserve">
+    <value>Help tab text should contain less than 3000 characters.</value>
+    <comment>Validation message if help text exceeded max length</comment>
+  </data>
+  <data name="HelpTabRequiredMessage" xml:space="preserve">
+    <value>Enter help tab text.</value>
+    <comment>Error message if help text is missing</comment>
+  </data>
   <data name="HelpTabTextToolTipHoverMessage" xml:space="preserve">
     <value>Provide text which will be displayed in Help tab of the bot and then click on Ok to add or Edit to modify</value>
     <comment>Message for help tab when information icon is hovered</comment>
+  </data>
+  <data name="HelpTextSaveErrorMessage" xml:space="preserve">
+    <value>Sorry, unable to save the help tab text due to an internal error. Try again.</value>
+    <comment>Error message if help text could not be saved.</comment>
+  </data>
+  <data name="KnowledgeBaseIdInvalidMessage" xml:space="preserve">
+    <value>The provided knowledgebase id is not valid.</value>
+    <comment>Error message if received knowledge base id is invalid</comment>
+  </data>
+  <data name="KnowledgeBaseIdRequiredMessage" xml:space="preserve">
+    <value>Enter knowledge base id.</value>
+    <comment>Error message if knowledge base id is missing</comment>
+  </data>
+  <data name="KnowledgeBaseIdSaveErrorMessage" xml:space="preserve">
+    <value>Sorry, unable to save the knowledge base id due to an internal error. Try again.</value>
+    <comment>Error message if knowledge base id could not be saved</comment>
+  </data>
+  <data name="KnowledgeBaseIdValidationMessage" xml:space="preserve">
+    <value>Enter knowledge base ID which should not contain any whitespace.</value>
+    <comment>Validation message if knowledge base id is invalid</comment>
   </data>
   <data name="KnowledgeBaseToolTipHoverMessage" xml:space="preserve">
     <value>Provide a valid knowledgebase id which will be used by bot and then click on Ok to add or Edit to modify</value>
     <comment>Message for knowledgebase id when information icon is hovered</comment>
   </data>
+  <data name="QnaMakerEndpointSaveErrorMessage" xml:space="preserve">
+    <value>Sorry, unable to save the QnAMaker endpoint key due to an internal error. Try again.</value>
+    <comment>Error message if QNA endpoint could not be saved</comment>
+  </data>
+  <data name="TeamIdInvalidMessage" xml:space="preserve">
+    <value>The provided team id is not valid.</value>
+    <comment>Error message if team id received is invalid</comment>
+  </data>
+  <data name="TeamIdRequiredMessage" xml:space="preserve">
+    <value>Enter team id.</value>
+    <comment>Error message if team id is missing</comment>
+  </data>
+  <data name="TeamIdSaveErrorMessage" xml:space="preserve">
+    <value>Sorry, unable to save the team id due to an internal error. Try again.</value>
+    <comment>Error message if team id could not be saved</comment>
+  </data>
   <data name="TeamIdToolTipHoverMessage" xml:space="preserve">
     <value>Provide a team id deeplink which will be used by bot and then click on Ok to add or Edit to modify</value>
     <comment>Message for team id when information icon is hovered</comment>
   </data>
+  <data name="TeamIdValidationMessage" xml:space="preserve">
+    <value>Enter team id which should not contain any whitespace.</value>
+    <comment>Validation message if team id entered is invalid</comment>
+  </data>
+  <data name="WelcomeMessageSaveErrorMessage" xml:space="preserve">
+    <value>Sorry, unable to save the welcome message due to an internal error. Try again.</value>
+    <comment>Error message if welcome text could not be saved.</comment>
+  </data>
   <data name="WelcomeMessageToolTipHoverMessage" xml:space="preserve">
     <value>Provide a welcome message which will be used by bot and then click on Ok to add or Edit to modify</value>
     <comment>Message for welcome message when information icon is hovered</comment>
+  </data>
+  <data name="WelcomeTextRequiredMessage" xml:space="preserve">
+    <value>Enter a welcome message.</value>
+    <comment>Error message if welcome text is missing</comment>
+  </data>
+  <data name="WelcomeTextValidationMessage" xml:space="preserve">
+    <value>Enter welcome message which should contain less than 300 characters.</value>
+    <comment>Validation message if welcome text exceeded max length</comment>
   </data>
 </root>
