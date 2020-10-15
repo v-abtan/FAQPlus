@@ -52,9 +52,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Helpers
                 return null;
             }
 
-            var requesterBotId = Utility.GetSanitizedId(turnContext.Activity.Recipient.Id);
             var userDetails = await GetUserDetailsInPersonalChatAsync(turnContext, cancellationToken).ConfigureAwait(false);
-            return await CreateTicketAsync(requesterBotId, message, askAnExpertSubmitTextPayload, userDetails, ticketsProvider).ConfigureAwait(false);
+            return await CreateTicketAsync(message, askAnExpertSubmitTextPayload, userDetails, ticketsProvider).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -91,14 +90,12 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Helpers
         /// <summary>
         /// Create a new ticket from the input.
         /// </summary>
-        /// <param name="requesterBotId">requester bot id.</param>
         /// <param name="message">A message in a conversation.</param>
         /// <param name="data">Represents the submit data associated with the Ask An Expert card.</param>
         /// <param name="member">Teams channel account detailing user Azure Active Directory details.</param>
         /// <param name="ticketsProvider">Tickets Provider.</param>
         /// <returns>TicketEntity object.</returns>
         private static async Task<TicketEntity> CreateTicketAsync(
-            string requesterBotId,
             IMessageActivity message,
             AskAnExpertCardPayload data,
             TeamsChannelAccount member,
@@ -111,7 +108,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Helpers
                 DateCreated = DateTime.UtcNow,
                 Title = data.Title,
                 Description = data.Description,
-                RequesterBotId = requesterBotId,
                 RequesterName = member.Name,
                 RequesterUserPrincipalName = member.UserPrincipalName,
                 RequesterGivenName = member.GivenName,

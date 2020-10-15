@@ -50,13 +50,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Models
         public DateTime DateCreated { get; set; }
 
         /// <summary>
-        /// Gets or sets the id of the bot that created the ticket.
-        /// </summary>
-        [IsSearchable]
-        [JsonProperty("RequesterBotId")]
-        public string RequesterBotId { get; set; }
-
-        /// <summary>
         /// Gets or sets the display name of the user that created the ticket.
         /// </summary>
         [IsSearchable]

@@ -840,7 +840,7 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 };
 
                 await this.botAdapter.ContinueConversationAsync(
-                    ticket.RequesterBotId,
+                    this.options.UserAppId,
                     conversationReference,
                     async (newTurnContext, newCancellationToken) =>
                     {
