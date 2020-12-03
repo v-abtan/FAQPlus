@@ -34,6 +34,9 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
     /// </summary>
     public class UserActivityHandler : CommonTeamsActivityHandler
     {
+        private readonly IBot smeBot;
+        private readonly MemoryCacheWithPolicy<string> expertTeamNameCache;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FaqPlusPlusBot"/> class.
         /// </summary>
@@ -43,15 +46,57 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
         /// <param name="qnaServiceProvider">Question and answer maker service provider.</param>
         /// <param name="optionsAccessor">A set of key/value application configuration properties for FaqPlusPlus bot.</param>
         /// <param name="logger">Instance to send logs to the Application Insights service.</param>
+        /// <param name="smeBot">Instance of SME bot to handle actions on old cards sent with old bot version.</param>
         public UserActivityHandler(
             IConfigurationDataProvider configurationProvider,
             MicrosoftAppCredentials microsoftAppCredentials,
             ITicketsProvider ticketsProvider,
             IQnaServiceProvider qnaServiceProvider,
             IOptionsMonitor<BotSettings> optionsAccessor,
-            ILogger<UserActivityHandler> logger)
+            ILogger<UserActivityHandler> logger,
+            SmeActivityHandler smeBot)
             : base(configurationProvider, microsoftAppCredentials, ticketsProvider, qnaServiceProvider, optionsAccessor.CurrentValue, logger)
         {
+            this.smeBot = smeBot;
+            this.expertTeamNameCache = new MemoryCacheWithPolicy<string>();
+        }
+
+        private async Task<string> GetExpertTeamName()
+        {
+            return await this.expertTeamNameCache.GetOrCreate(
+                ConfigurationEntityTypes.TeamId,
+                async () => await this.configurationProvider.GetSavedEntityDetailAsync(ConfigurationEntityTypes.TeamId)
+                    .ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Handles an incoming activity.
+        /// </summary>
+        /// <param name="turnContext">Context object containing information cached for a single turn of conversation with a user.</param>
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>
+        /// Reference link: https://docs.microsoft.com/en-us/dotnet/api/microsoft.bot.builder.activityhandler.onturnasync?view=botbuilder-dotnet-stable.
+        /// </remarks>
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            var message = turnContext?.Activity;
+            if (message != null)
+            {
+                message.TryGetChannelData<TeamsChannelData>(out var teamsChannelData);
+                string expertTeamId = await this.GetExpertTeamName();
+                if (teamsChannelData?.Team?.Id == expertTeamId)
+                {
+                    await this.smeBot.OnTurnAsync(turnContext, cancellationToken);
+                    return;
+                }
+                else
+                {
+                    this.logger.LogWarning($"Received conversationType {message.Conversation.ConversationType} from unexpected sender");
+                }
+            }
+
+            await base.OnTurnAsync(turnContext, cancellationToken);
         }
 
         /// <summary>
@@ -81,7 +126,6 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                             turnContext,
                             cancellationToken).ConfigureAwait(false);
                         break;
-
                     default:
                         this.logger.LogWarning($"Received unexpected conversationType {message.Conversation.ConversationType}");
                         break;
